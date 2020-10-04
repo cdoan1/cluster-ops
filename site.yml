@@ -6,6 +6,7 @@
   
   roles:
     - common
-    - cleanup-managed-cluster
+    - checks
     - import
+    # - cleanup-managed-cluster
 

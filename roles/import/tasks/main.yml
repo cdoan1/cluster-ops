@@ -5,13 +5,23 @@
     path: "{{ role_path }}/templates/{{ hostvars[inventory_hostname].name }}.sh"
   register: stat_result
 
-- name: run script
+- name: check open-cluster-management-agent pods
+  shell: |
+    oc get pods -n open-cluster-management-agent
+  register: result
+  ignore_errors: true
+
+- name: "run import {{ hostvars[inventory_hostname].name }} command"
   script: "{{ role_path }}/templates/{{ hostvars[inventory_hostname].name }}.sh"
   delegate_to: localhost
   register: output
-  when: stat_result.stat.exists
+  when:
+  - stat_result.stat.exists
+  - "'Running' not in result.stdout"
 
-- name: output
+- name: output import command
   debug:
     msg: "{{ output.stdout_lines }}"
-  when: stat_result.stat.exists
+  when: 
+  - stat_result.stat.exists
+  - "'Running' not in result.stdout"

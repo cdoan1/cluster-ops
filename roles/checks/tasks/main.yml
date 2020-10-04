@@ -4,6 +4,8 @@
   shell: |
     # oc config use-context default/api-{{ hostvars[inventory_hostname].name }}-demo-red-chesterfield-com:6443/kube:admin
     oc get namespaces
+    oc get pods -n open-cluster-management-agent
+    oc get pods -n open-cluster-management-agent-addon
   register: result
   ignore_errors: true
 
