@@ -1,0 +1,78 @@
+---
+
+
+# - name: check namespaces
+#   shell: |
+#     oc get pods -n {{ item }}
+#   loop:
+#     - "open-cluster-management-agent"
+#     - "open-cluster-management-agent-addon"
+#   register: result
+#
+# - name: check if there are any Terminating namespaces
+#   debug:
+#     msg: "{{ item.stdout_lines }}"
+#   loop: "{{ result.results }}"
+
+- name: check namespaces
+  shell: |
+    oc get pods -n open-cluster-management-agent
+  register: result
+  ignore_errors: true
+
+- name: check if there are any Terminating namespaces
+  debug:
+    msg: "{{ result.stdout }}"
+
+- name: Force removal of klusterlet components
+  shell: |
+    #!/bin/bash
+    if [ -z "${OPERATOR_NAMESPACE}" ]; then
+      OPERATOR_NAMESPACE="open-cluster-management-agent-addon"
+    fi
+
+    if [ -z "${KLUSTERLET_NAMESPACE}" ]; then
+      KLUSTERLET_NAMESPACE="open-cluster-management-agent"
+    fi
+
+    KUBECTL=oc
+
+    component_crds=(
+      appliedmanifestworks.work.open-cluster-management.io
+      applicationmanagers.agent.open-cluster-management.io
+      certpolicycontrollers.agent.open-cluster-management.io
+      iampolicycontrollers.agent.open-cluster-management.io
+      policycontrollers.agent.open-cluster-management.io
+      searchcollectors.agent.open-cluster-management.io
+      workmanagers.agent.open-cluster-management.io
+    )
+
+    for crd in "${component_crds[@]}"; do
+      echo "force delete all CustomResourceDefinition ${crd} resources..."
+      for resource in `${KUBECTL} get ${crd} -o name -n ${OPERATOR_NAMESPACE}`; do
+        echo "attempt to delete ${crd} resource ${resource}..."
+        ${KUBECTL} delete ${resource} -n ${OPERATOR_NAMESPACE} --timeout=30s
+        echo "force remove ${crd} resource ${resource}..."
+        ${KUBECTL} patch ${resource} -n ${OPERATOR_NAMESPACE} --type="json" -p '[{"op": "remove", "path":"/metadata/finalizers"}]'
+      done
+      echo "force delete all CustomResourceDefinition ${crd} resources..."
+      ${KUBECTL} delete crd ${crd}
+    done
+  register: result2
+  when: "'Running' in result.stdout"
+  ignore_errors: true
+
+- name: cleanup open-cluster-management-agent output
+  debug:
+    msg: "{{ result2.stdout_lines }}"
+  when: "'Running' in result.stdout"
+
+- name: check namespaces open-cluster-management-agent-addon
+  shell: |
+    oc get pods -n open-cluster-management-agent-addon
+  register: result4
+  ignore_errors: true
+
+- name: output check namespaces open-cluster-management-agent-addon
+  debug:
+    msg: "{{ result4.stdout }}"

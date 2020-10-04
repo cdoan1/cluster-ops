@@ -1,0 +1,17 @@
+---
+
+- name: calculate stat of import file
+  stat:
+    path: "{{ role_path }}/templates/{{ hostvars[inventory_hostname].name }}.sh"
+  register: stat_result
+
+- name: run script
+  script: "{{ role_path }}/templates/{{ hostvars[inventory_hostname].name }}.sh"
+  delegate_to: localhost
+  register: output
+  when: stat_result.stat.exists
+
+- name: output
+  debug:
+    msg: "{{ output.stdout_lines }}"
+  when: stat_result.stat.exists
