@@ -33,6 +33,8 @@
     oc config use-context default/api-{{ hostvars[inventory_hostname].name }}-demo-red-chesterfield-com:6443/kube:admin
     oc get nodes
   register: result3
+  failed_when: "'NotReady' in result3.stdout"
+  ignore_errors: true
 
 - name: verify kube context is maintained
   debug:
