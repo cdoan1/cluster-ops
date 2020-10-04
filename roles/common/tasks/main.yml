@@ -1,0 +1,39 @@
+---
+
+- name: main
+  shell: |
+    # oc cluster-info
+    export KUBECONFIG=/tmp/ansible
+    oc version
+    oc login -u kubeadmin -p {{ hostvars[inventory_hostname].password }} -s {{ hostvars[inventory_hostname].api }} --insecure-skip-tls-verify
+    oc cluster-info
+  register: result
+
+- name: debug main
+  debug:
+    msg: 
+    - "{{ result.stdout_lines }}"
+    - "{{ hostvars[inventory_hostname].name }}"
+    - "{{ hostvars[inventory_hostname].api }}"
+
+- name: verify serial execution
+  shell: |
+    export KUBECONFIG=/tmp/ansible
+    oc config use-context default/api-{{ hostvars[inventory_hostname].name }}-demo-red-chesterfield-com:6443/kube:admin
+    oc version
+    oc cluster-info
+  register: result2
+
+- name: verify kube context is maintained
+  debug:
+    msg: "{{ result2.stdout_lines }}"
+
+- name: verify serial execution
+  shell: |
+    oc config use-context default/api-{{ hostvars[inventory_hostname].name }}-demo-red-chesterfield-com:6443/kube:admin
+    oc get nodes
+  register: result3
+
+- name: verify kube context is maintained
+  debug:
+    msg: "{{ result3.stdout_lines }}"

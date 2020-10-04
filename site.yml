@@ -1,0 +1,10 @@
+---
+- name: manage cluster configurations
+  hosts: all
+  serial: 1
+  connection: local
+  
+  roles:
+    - common
+    - checks
+

@@ -1,0 +1,12 @@
+---
+
+- name: check namespaces
+  shell: |
+    # oc config use-context default/api-{{ hostvars[inventory_hostname].name }}-demo-red-chesterfield-com:6443/kube:admin
+    oc get namespaces
+  register: result
+  ignore_errors: true
+
+- name: check if there are any Terminating namespaces
+  debug:
+    msg: "{{ result.stdout_lines }}"
